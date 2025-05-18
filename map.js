@@ -64,7 +64,7 @@ map.on('load', async () => {
         const jsonurl = 'https://dsc106.com/labs/lab07/data/bluebikes-stations.json';
         const jsonData = await d3.json(jsonurl);
         
-        const stations = jsonData.data.stations.filter(d => 
+        let stations = jsonData.data.stations.filter(d => 
             !isNaN(d.lon) && !isNaN(d.lat)
           );
         const trips = await d3.csv('https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv');
