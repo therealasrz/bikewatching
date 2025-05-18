@@ -64,13 +64,35 @@ map.on('load', async () => {
         const jsonurl = 'https://dsc106.com/labs/lab07/data/bluebikes-stations.json';
         const jsonData = await d3.json(jsonurl);
         
-        const stations = jsonData.data.stations.filter(d => 
+        let stations = jsonData.data.stations.filter(d => 
             !isNaN(d.lon) && !isNaN(d.lat)
           );
         const trips = await d3.csv('https://dsc106.com/labs/lab07/data/bluebikes-traffic-2024-03.csv');
-        const departures = d3.rollup(trips, v => v.length, d => d.start_station_id);
-        const arrivals = d3.rollup(trips, v => v.length, d => d.end_station_id);
+        const departures = d3.rollup(
+          trips,
+          v => v.length,
+          d => d.start_station_id
+        );
+        const arrivals = d3.rollup(
+          trips,
+          v => v.length,
+          d => d.end_station_id
+        );
 
+        stations = stations.map((station) => {
+          const id = station.station_id; 
+        
+          station.departures = departures.get(id) ?? 0;
+          station.arrivals = arrivals.get(id) ?? 0;
+          station.totalTraffic = station.departures + station.arrivals;
+        
+          return station;
+        });
+
+        const radiusScale = d3.scaleSqrt().domain([0, d3.max(stations, (d) => d.totalTraffic)]).range([0, 25]);
+        
+        console.log('Enriched stations with traffic:', stations);
+        console.log('Trips data loaded:', trips);
         console.log('First station:', stations[0]);
         console.log('Loaded JSON Data:', jsonData);
         console.log('Stations Array:', stations);
@@ -81,7 +103,7 @@ map.on('load', async () => {
         .data(stations)
         .enter()
         .append('circle')
-        .attr('r', 5) // Radius of the circle
+        .attr('r', d => radiusScale(d.totalTraffic)) // Radius of the circle
         .attr('fill', 'steelblue') // Circle fill color
         .attr('stroke', 'white') // Circle border color
         .attr('stroke-width', 1) // Circle border thickness
